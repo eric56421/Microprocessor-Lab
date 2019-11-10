@@ -1,6 +1,9 @@
 {
 	"folders": [
 		{
+			"path": "D:\\Course\\2nd_Fall\\Microprocessor\\Lab Code\\lab00"
+		},
+		{
 			"path": "D:\\Course\\2nd_Fall\\Microprocessor\\Lab Code\\lab01"
 		},
 		{
@@ -11,7 +14,7 @@
 		},
 		{
 			"path": "D:\\Course\\2nd_Fall\\Microprocessor\\Lab Code\\lab04"
-		}
+		},		
 	],
 	
 	"settings": {
