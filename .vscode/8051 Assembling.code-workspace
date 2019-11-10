@@ -1,0 +1,26 @@
+{
+	"folders": [
+		{
+			"path": "D:\\Course\\2nd_Fall\\Microprocessor\\Lab Code\\lab01"
+		},
+		{
+			"path": "D:\\Course\\2nd_Fall\\Microprocessor\\Lab Code\\lab02"
+		},
+		{
+			"path": "D:\\Course\\2nd_Fall\\Microprocessor\\Lab Code\\lab03"
+		},
+		{
+			"path": "D:\\Course\\2nd_Fall\\Microprocessor\\Lab Code\\lab04"
+		}
+	],
+	
+	"settings": {
+		"workbench.colorTheme": "Default Dark+",
+		"editor.rulers": [80],
+		"workbench.colorCustomizations": {
+			"editorRuler.foreground": "#52433852",
+		},
+		"files.encoding": "cp950",
+				
+	}
+}
