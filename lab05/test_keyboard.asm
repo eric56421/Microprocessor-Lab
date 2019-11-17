@@ -9,6 +9,7 @@ LOOP:
         MOV P3, R1
         ;MOV P2, #01110000B
         MOV A, P2
+        MOV P1, R2
         JMP LOOP
 
         END

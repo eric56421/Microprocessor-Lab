@@ -9,7 +9,9 @@ int main(void)
     cout<<"input r5 r6 r7:"<<endl;
     while (cin>>r5>>r6>>r7) {
         int dt = 3+3*r5+2*r5*r6*r7+3*r6*r7;
-        cout<<dt/6/1000<<" ms"<<endl;
+        dt /= 6;
+        cout<<dt<<" us"<<endl;
+        cout<<dt/1000<<" ms"<<endl;
     }
 
     return 0;

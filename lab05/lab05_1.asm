@@ -25,12 +25,15 @@ MAIN:
 GET_KEY:
         MOV R1, #0FEH   ; R1 controls reads which col
         MOV R2, #04H    ; R2 is the counter of LOOP_GET_KEY_COL
+        MOV P3, R1
         JMP LOOP_GET_KEY_ROW
 LOOP_GET_KEY_COL:
         XCH A, R1
         RL A
         XCH A, R1
+        MOV P3, R1
 LOOP_GET_KEY_ROW:
+        MOV P2, #0FFH
         MOV R0, P2      ; R0 store P2        
 ROW_0:
         CJNE R0, #0F7H, ROW_1
@@ -59,6 +62,7 @@ ROW_NO:
 GET_KEY_RETURN:
         MOV A, NUM
         ADD A, R2
+        DEC A
         DA A
         MOV NUM, A
         ;CLR C
@@ -66,6 +70,7 @@ GET_KEY_RETURN:
         RET
 
 SHOW:
+        MOV R4, #18H
         MOV A, NUM
         MOV NUM_L, #0FH
         ANL NUM_L, A
@@ -85,16 +90,17 @@ SHOW_DIGIT_H:
 OUTPUT:
         MOV P1, DIGIT_0
         CALL SDELAY
-        MOV P2, DIGIT_1
+        MOV P1, DIGIT_1
         CALL SDELAY
+        DJNZ R4, OUTPUT
         RET
 
 SDELAY:                  
-        MOV R5, #20H    ; 1 machine cycle
+        MOV R5, #1H    ; 1 machine cycle
 SDELAY1:
-        MOV R6, #64H    ; 1 machine cycle
+        MOV R6, #4H    ; 1 machine cycle
 SDELAY2:
-        MOV R7, #0C8H   ; 1 machine cycle
+        MOV R7, #0FFH   ; 1 machine cycle
 SDELAY3:
         DJNZ R7, SDELAY3 ; 2 machine cycle
         DJNZ R6, SDELAY2 ; 2 machine cycle
