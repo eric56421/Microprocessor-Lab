@@ -2,7 +2,7 @@
 
         DIGIT_0 EQU 30H
         DIGIT_1 EQU 31H
-        DIGTI_2 EQU 32H
+        DIGIT_2 EQU 32H
         DIGIT_3 EQU 33H
         NUM_L EQU 34H
         NUM_H EQU 35H
