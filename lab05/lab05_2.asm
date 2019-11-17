@@ -1,4 +1,6 @@
 ; Keyboard with 7-segment display showing number on the right side.
+; And left shift original digits.
+
 
         DIGIT_0 EQU 30H ; Digit_0 is the rightest digit on 7-segment display
         DIGIT_1 EQU 31H
