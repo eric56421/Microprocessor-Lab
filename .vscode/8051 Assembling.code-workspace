@@ -17,6 +17,9 @@
 		},
 		{
 			"path": "D:\\Course\\2nd_Fall\\Microprocessor\\Lab Code\\lab05"
+		},
+		{
+			"path": "D:\\Course\\2nd_Fall\\Microprocessor\\Lab Code\\lab06"
 		}
 	],
 	
@@ -27,6 +30,8 @@
 			"editorRuler.foreground": "#52433852",
 		},
 		"files.encoding": "cp950",
-				
+		"editor.insertSpaces": true,
+		"editor.tabSize": 8,
+		
 	}
 }
