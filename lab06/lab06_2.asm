@@ -31,13 +31,13 @@ LED_SHOW1:
         JZ LED_SHOW2            ; if CNT1 is 0, jump to show next word
         DEC CNT1                ; CNT1--
         MOV DPTR, #TABLE2       ; move first word table to DPTR
-        JMP NEXT_COLUMN         ; jump to output reigon
+        JMP NEXT_COLUMN         ; jump to output region
 LED_SHOW2:
         MOV A, CNT2             ; to check whether CNT2 equals to 0 
         JZ LED_SHOW3            ; if CNT2 is 0, jump to show next word
         DEC CNT2                ; CNT2--
         MOV DPTR, #TABLE3       ; move second word table to DPTR
-        JMP NEXT_COLUMN         ; jump to output reigon
+        JMP NEXT_COLUMN         ; jump to output region
 LED_SHOW3:
         DEC CNT3                ; CNT3--
         MOV DPTR, #TABLE1       ; move third word table to DPTR
