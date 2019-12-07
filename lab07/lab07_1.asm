@@ -18,14 +18,14 @@ LOOP:
         JMP LOOP
 
 RR_45:                          ; spin clockwise for 45 degrees
-        MOV R3, #10H            ; R3 is the counter for spining 45 degrees
+        MOV R3, #10H            ; R3 is the counter for spinning 45 degrees
 RR_45_LOOP:
         CALL MOTOR_SPIN_RR
         DJNZ R3, RR_45_LOOP     ; to run 16 times
         RET
 
 LR_45:                          ; spin clockwise for 45 degrees
-        MOV R3, #10H            ; R3 is the counter for spining 45 degrees
+        MOV R3, #10H            ; R3 is the counter for spinning 45 degrees
 LR_45_LOOP:
         CALL MOTOR_SPIN_LR
         DJNZ R3, LR_45_LOOP     ; to run 16 times
@@ -71,7 +71,7 @@ DELAY3:
         DJNZ R5, DELAY1 ; 2 machine cycle
         RET             ; 2 machine cycle
 
-TABLE_RR:               ; table for spining
+TABLE_RR:               ; table for spinning
         DB 00001000B
         DB 00000100B
         DB 00000010B

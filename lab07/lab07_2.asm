@@ -1,4 +1,4 @@
-; use keyboard to control how step motor spining
+; use keyboard to control how step motor spinning
 ; 10 mode: 90, 180, 270, 360, keep sining for two ways        
 ; P1 connected to step motor.
 ; P2 connected to keyboard.
@@ -16,19 +16,19 @@ SETUP:
         
 MAIN:
         CALL KEY_PUSH_POLLING   ; keep polling whether key is pushed
-        CALL SPIN_BY_CASE       ; spin the motor by cas
+        CALL SPIN_BY_CASE       ; spin the motor by case
         MOV P1, #00H            ; avoid motor becoming hot
         JMP MAIN
 
 RR_90:                          ; spin clockwise for 90 degrees
-        MOV R3, #20H            ; R3 is the counter for spining 90 degrees
+        MOV R3, #20H            ; R3 is the counter for spinning 90 degrees
 RR_90_LOOP:
         CALL MOTOR_SPIN_RR      
         DJNZ R3, RR_90_LOOP     ; to run 32 times
         RET
 
 LR_90:                          ; spin counter clockwise for 90 degrees
-        MOV R3, #20H            ; R3 is the counter for spining 90 degrees
+        MOV R3, #20H            ; R3 is the counter for spinning 90 degrees
 LR_90_LOOP:
         CALL MOTOR_SPIN_LR
         DJNZ R3, LR_90_LOOP     ; to run 32 times
@@ -37,7 +37,7 @@ LR_90_LOOP:
 MOTOR_SPIN_RR:                  ; the inner motor spins for a Cycle
         MOV R4, #04H            ; R4 is the index to read table
         MOV DPTR, #TABLE_RR     ; set correct table to read
-        JMP SPIN                ; jmup to spin region
+        JMP SPIN                ; jump to spin region
 MOTOR_SPIN_LR:                  ; the inner motor spins for a Cycle
         MOV R4, #04H            ; R4 is the index to read table
         MOV DPTR, #TABLE_LR     ; set correct table to read
@@ -98,14 +98,14 @@ L_360:
         RET
 R_FOREVER:
         CALL RR_90
-        CJNE R0, #0DEH, L_FOREVER       ; keep spining
+        CJNE R0, #0DEH, L_FOREVER       ; keep spinning
         JMP R_FOREVER
 L_FOREVER:
         CALL LR_90
-        CJNE R0, #0DDH, OTHER_CASE      ; keep spining
+        CJNE R0, #0DDH, OTHER_CASE      ; keep spinning
         JMP L_FOREVER
 OTHER_CASE:
-        RET                             ; no spining
+        RET                             ; no spinning
 
 KEY_PUSH_POLLING:
         MOV ROW_CNT, #04H       ; ROW_CNT is counter for scanning 4 rows
@@ -136,7 +136,7 @@ SDELAY3:
         DJNZ R5, SDELAY1        ; 2 machine cycle
         RET                     ; 2 machine cycle
 
-TABLE_RR:                       ; table for spining
+TABLE_RR:                       ; table for spinning
         DB 00001000B
         DB 00000100B
         DB 00000010B
