@@ -3,6 +3,8 @@
 ; JP05 (BCD) <-> P2.0
 ; D02 (JP07 on debounce switch) <-> Trig (PIN Sensor)
 ; Echo (PIN Sensor) <-> P3.3
+; 
+; Ref: https://bbs.pigoo.com/forum.php?mod=viewthread&action=printable&tid=40828
 
         BIN EQU 30H
         ; BIN+1, BIN+0 STORE DISTANCE
