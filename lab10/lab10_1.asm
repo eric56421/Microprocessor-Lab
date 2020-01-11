@@ -1,6 +1,6 @@
 ; Connect PIN Sensor to get the distance in cm.
 ; With debounce switch to trigger.
-; JP05 (BCD) <-> P2.0
+; JP05 (BCD) <-> P2.7
 ; D02 (JP07 on debounce switch) <-> Trig (PIN Sensor)
 ; Echo (PIN Sensor) <-> P3.3
 ; 
