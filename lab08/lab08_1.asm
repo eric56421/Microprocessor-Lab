@@ -7,8 +7,8 @@
 
         ORG 30H
 SETUP:
-        MOV P1, 00H             ; set P1 as output
-        MOV P2, 00H             ; set P2 as output
+        MOV P1, #00H             ; set P1 as output
+        MOV P2, #00H             ; set P2 as output
         MOV A, #00111000B       ; LEN:8, LINES:2, FONT:7
         CALL CMDWRT
         MOV A, #00001110B       ; DISPLAY:ON, CURSOR_UNDERLINE:ON, BLINKING:OFF
