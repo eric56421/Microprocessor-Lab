@@ -1,4 +1,5 @@
 ;======== LCM Function ========
+; Note to the setting.
 ;======== Setup LCM =========
 SETUP_LCM:
         MOV A, #00111000B       ; LEN:8, LINES:2, FONT:7
@@ -50,7 +51,7 @@ SHOW1_1:
         CALL DATAWRT
         INC R2
         
-        CJNE R2, #8, SHOW1_1
+        CJNE R2, #16, SHOW1_1
         MOV A, #11000000B       ; SET CURSOR TO SECOND LINE
         CALL CMDWRT
         RET
@@ -66,12 +67,18 @@ SHOW2_1:
         CALL DATAWRT
         INC R2
         
-        CJNE R2, #8, SHOW2_2
+        CJNE R2, #16, SHOW2_2
         MOV A, #11000000B       ; SET CURSOR TO SECOND LINE
         CALL CMDWRT
         JMP SHOW2_1
 SHOW2_2:
-        CJNE R2, #16, SHOW2_1
+        CJNE R2, #32, SHOW2_1
+        RET
+
+;=== Add Star * ===
+ADDSTAR:
+        MOV A, #'*'
+        CALL DATAWRT
         RET
 
 ;======== Table ========
