@@ -7,8 +7,8 @@
 
         ORG 30H
 SETUP:
-        MOV P1, #00H             ; set P1 as output
-        MOV P2, #00H             ; set P2 as output
+        ;MOV P1, #00H             ; set P1 as output
+        ;MOV P2, #00H             ; set P2 as output
         MOV A, #00111000B       ; LEN:8, LINES:2, FONT:7
         CALL CMDWRT
         MOV A, #00001110B       ; DISPLAY:ON, CURSOR_UNDERLINE:ON, BLINKING:OFF
@@ -50,16 +50,24 @@ SHOW_LABEL_LOOP:
         RET
 
 CMDWRT:                         ; Command write
-        MOV P1, A
-        MOV P2, #00000100B      ; 04H, E=1, RW=0, RS=0
-        MOV P2, #00000000B      ; 00H, E=0, RW=0, RS=0
+        MOV P2, A
+        ;CLR P1.0
+        ;SETB P1.2
+        ;SETB P1.2
+        ;CLR P1.2
+        MOV P1, #00000100B      ; 04H, E=1, RW=0, RS=0
+        MOV P1, #00000000B      ; 00H, E=0, RW=0, RS=0
         CALL DELAY3MS
         RET
 
 DATAWRT:                        ; ShowData write
-        MOV P1, A
-        MOV P2, #00000101B      ; 05H, E=1, RW=0, RS=1
-        MOV P2, #00000001B      ; 01H, E=1, RW=0, RS=1
+        MOV P2, A
+        ;SETB P1.0
+        ;SETB P1.2
+        ;SETB P1.2
+        ;CLR P1.2
+        MOV P1, #00000101B      ; 05H, E=1, RW=0, RS=1
+        MOV P1, #00000001B      ; 01H, E=1, RW=0, RS=1
         CALL DELAY3MS
         RET
 
@@ -76,7 +84,7 @@ DELAY3MS3:
         RET                     ; 2 machine cycle
 
 TABLE_ID:
-        DB "0710758"
+        DB "071FUCK"
 TABLE_LABEL:
         DB "^^ Student ID ^^"
 
