@@ -39,11 +39,10 @@ DELAY_LCM3:
         DJNZ R5, DELAY_LCM1 ; 2 machine cycle
         RET             ; 2 machine cycle
 
-;=== Main Menu 1 ===
+;=== Show on LCM 1 line ===
 SHOW1:
         MOV A, #80H             ; SET CURSOR TO HOME
         CALL CMDWRT
-        MOV DPTR, #TLCM_1
         MOV R2, #0
 SHOW1_1:
         MOV A, R2
@@ -51,19 +50,15 @@ SHOW1_1:
         CALL DATAWRT
         INC R2
         
-        CJNE R2, #8, SHOW1_2
+        CJNE R2, #8, SHOW1_1
         MOV A, #11000000B       ; SET CURSOR TO SECOND LINE
         CALL CMDWRT
-        JMP SHOW1_1
-SHOW1_2:
-        CJNE R2, #16, SHOW1_1
         RET
 
-;=== Main Menu 2 ===
+;=== Show on LCM 2 lines ===
 SHOW2:
         MOV A, #80H             ; SET CURSOR TO HOME
         CALL CMDWRT
-        MOV DPTR, #TLCM_2
         MOV R2, #0
 SHOW2_1:
         MOV A, R2
@@ -78,8 +73,8 @@ SHOW2_1:
 SHOW2_2:
         CJNE R2, #16, SHOW2_1
         RET
-;;TO DO: SHOW3...
 
+;======== Table ========
 TLCM_1:                 ; MAINMENU_1
         DB "Smart Lock      "
         DB "1.Serial Unlock"
@@ -107,6 +102,124 @@ TLCM_8:                 ; AutoMode
         DB "Be close to open"
         ;DB ""          ; "Open or close"
                         ; depends on RFID
+
+
+;;=== Main Menu 1 ===
+;SHOW1:
+;        MOV A, #80H             ; SET CURSOR TO HOME
+;        CALL CMDWRT
+;        MOV DPTR, #TLCM_1
+;        MOV R2, #0
+;SHOW1_1:
+;        MOV A, R2
+;        MOVC A, @A+DPTR
+;        CALL DATAWRT
+;        INC R2
+;        
+;        CJNE R2, #8, SHOW1_2
+;        MOV A, #11000000B       ; SET CURSOR TO SECOND LINE
+;        CALL CMDWRT
+;        JMP SHOW1_1
+;SHOW1_2:
+;        CJNE R2, #16, SHOW1_1
+;        RET
+;
+;;=== Main Menu 2 ===
+;SHOW2:
+;        MOV A, #80H             ; SET CURSOR TO HOME
+;        CALL CMDWRT
+;        MOV DPTR, #TLCM_2
+;        MOV R2, #0
+;SHOW2_1:
+;        MOV A, R2
+;        MOVC A, @A+DPTR
+;        CALL DATAWRT
+;        INC R2
+;        
+;        CJNE R2, #8, SHOW2_2
+;        MOV A, #11000000B       ; SET CURSOR TO SECOND LINE
+;        CALL CMDWRT
+;        JMP SHOW2_1
+;SHOW2_2:
+;        CJNE R2, #16, SHOW2_1
+;        RET
+;
+;;=== Serial Unlock ===
+;SHOW3:
+;        MOV A, #80H             ; SET CURSOR TO HOME
+;        CALL CMDWRT
+;        MOV DPTR, #TLCM_3
+;        MOV R2, #0
+;SHOW3_1:
+;        MOV A, R2
+;        MOVC A, @A+DPTR
+;        CALL DATAWRT
+;        INC R2
+;        
+;        CJNE R2, #8, SHOW3_1
+;        MOV A, #11000000B       ; SET CURSOR TO SECOND LINE
+;        CALL CMDWRT
+;        RET
+;
+;;=== Setting ===
+;SHOW4:
+;        MOV A, #80H             ; SET CURSOR TO HOME
+;        CALL CMDWRT
+;        MOV DPTR, #TLCM_4
+;        MOV R2, #0
+;SHOW4_1:
+;        MOV A, R2
+;        MOVC A, @A+DPTR
+;        CALL DATAWRT
+;        INC R2
+;        
+;        CJNE R2, #8, SHOW4_2
+;        MOV A, #11000000B       ; SET CURSOR TO SECOND LINE
+;        CALL CMDWRT
+;        JMP SHOW4_1
+;SHOW4_2:
+;        CJNE R2, #16, SHOW4_1
+;        RET
+;
+;;=== Set Password ===
+;SHOW5:
+;        MOV A, #80H             ; SET CURSOR TO HOME
+;        CALL CMDWRT
+;        MOV DPTR, #TLCM_5
+;        MOV R2, #0
+;SHOW5_1:
+;        MOV A, R2
+;        MOVC A, @A+DPTR
+;        CALL DATAWRT
+;        INC R2
+;        
+;        CJNE R2, #8, SHOW5_2
+;        MOV A, #11000000B       ; SET CURSOR TO SECOND LINE
+;        CALL CMDWRT
+;        JMP SHOW5_1
+;SHOW5_2:
+;        CJNE R2, #16, SHOW5_1
+;        RET
+;
+;;=== SetMusic_1 ===
+;SHOW6:
+;        MOV A, #80H             ; SET CURSOR TO HOME
+;        CALL CMDWRT
+;        MOV DPTR, #TLCM_6
+;        MOV R2, #0
+;SHOW6_1:
+;        MOV A, R2
+;        MOVC A, @A+DPTR
+;        CALL DATAWRT
+;        INC R2
+;        
+;        CJNE R2, #8, SHOW6_2
+;        MOV A, #11000000B       ; SET CURSOR TO SECOND LINE
+;        CALL CMDWRT
+;        JMP SHOW6_1
+;SHOW6_2:
+;        CJNE R2, #16, SHOW6_1
+;        RET
 
 
         END
