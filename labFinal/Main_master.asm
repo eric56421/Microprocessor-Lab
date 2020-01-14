@@ -1,4 +1,11 @@
-	PS1 EQU 51H  ; correct password
+    SPEAKER EQU P1.4
+    TONE1 EQU 30H
+    TONE2 EQU 31H
+    TEMPO EQU 32H
+    TIME EQU 33H
+    MCOUNT EQU 34H
+    
+    PS1 EQU 51H  ; correct password
 	PS2 EQU 52H
 	PS3 EQU 53H
 	PS4 EQU 54H
@@ -30,6 +37,9 @@
     ORG 00H
     JMP SETUP
 
+    ORG 0BH
+    JMP INTERRUPT
+
     ORG 23H
     JMP RECEIVE
 
@@ -46,6 +56,7 @@ SETUP:
     MOV PS7,#54
     MOV PS8,#55
     MOV SONG_MODE, #1
+    MOV IP, #00010000B
 
 ;======== MAIN & MainMenu ========
 MAIN:
@@ -70,7 +81,7 @@ MAINMENU_SWITCH:
 	MOV R2,INPUT 
 	CJNE R2, #1, MAINMENU_SWITCH_1
 	
-	MOV SBUF,#49 ; mov the data to SBUFF
+	MOV SBUF,#'1' ; mov the data to SBUFF
     JNB TI,$   ; wait until transmit complete
     CLR TI
 	
@@ -87,7 +98,7 @@ MAINMENU_SWITCH_1:
 	MOV R2,INPUT 
 	CJNE R2, #2, MAINMENU_SWITCH_2
 
-	MOV SBUF,#50 ; mov the data to SBUFF
+	MOV SBUF,#'2' ; mov the data to SBUFF
     JNB TI,$     ; wait until transmit complete
     CLR TI
 
@@ -104,7 +115,7 @@ MAINMENU_SWITCH_2:
 	MOV R2,INPUT 
 	CJNE R2,#3,MAINMENU_1
 
-    MOV SBUF,#51 ; mov the data to SBUFF
+    MOV SBUF,#'3' ; mov the data to SBUFF
     JNB TI,$     ; wait until transmit complete
     CLR TI
 
@@ -121,6 +132,8 @@ MAINMENU_SWITCH_2:
 
 ;======== Unlock Success ========
 OPEN_DOOR:
+    CALL ANIMATE
+
     MOV R4, #10
 OPENDOOR:
     SETB P1.5   ; INT0 SEND 2
@@ -129,22 +142,25 @@ OPENDOOR:
     CLR P1.5
     DJNZ R4, OPENDOOR
 
+    MOV DPTR, #TLCM_10
+    CALL SHOW2
+
     MOV R2, SONG_MODE
 SONG1:
     CJNE R2, #1, SONG2
-    ;CALL PLAY_SONG1
+    CALL PLAY_SONG1
     RET
 SONG2:
     CJNE R2, #2, SONG3
-    ; CALL PLAY_SONG2
+    CALL PLAY_SONG2
     RET
 SONG3:
     CJNE R2, #3, SONG4
-    ; CALL PLAY_SONG3
+    CALL PLAY_SONG3
     RET
 SONG4:                      ; INVALID SONG, RESET TO SONG1
     MOV SONG_MODE, #1
-    ; CALL PLAY_SONG1
+    CALL PLAY_SONG1
     RET
 ;======== Unlock Success ========
 
@@ -314,32 +330,36 @@ ROW1:
     MOV A,P0
     ANL A,#0FH
     MOV INPUT,#1
-    CJNE A,#0FH,EXIT ; if there is a button be pushed, in row1
+    CJNE A,#0FH,DEBOUNCING ; if there is a button be pushed, in row1
 ROW2:
     MOV P0,#0BFH     ; scan row2
     CALL S_DELAY
     MOV A,P0
     ANL A,#0FH
     MOV INPUT,#2
-    CJNE A,#0FH,EXIT ; if there is a button be pushed, in row2
+    CJNE A,#0FH,DEBOUNCING ; if there is a button be pushed, in row2
 ROW3:
     MOV P0,#0DFH     ; scan row3
     CALL S_DELAY
     MOV A,P0
     ANL A,#0FH
     MOV INPUT,#3
-    CJNE A,#0FH,EXIT ; if there is a button be pushed, in row3
+    CJNE A,#0FH,DEBOUNCING ; if there is a button be pushed, in row3
 ROW4:
     MOV P0,#0EFH     ; scan row4
     CALL S_DELAY
     MOV A,P0
     ANL A,#0FH
     MOV INPUT,#4
-    CJNE A,#0FH,EXIT ; if there is a button be pushed in row4
-
+    CJNE A,#0FH,DEBOUNCING ; if there is a button be pushed in row4
+    
     JMP KEYBOARD
 
-EXIT:
+DEBOUNCING:
+    MOV A,P0
+    ANL A,#0FH
+    CJNE A,#0FH,DEBOUNCING
+
     RET              ; function return!!!!!!!!!!!!!!!!!
 ; =========== KEYBOARD ============
 
@@ -542,6 +562,8 @@ HERE1:
     MOV R0,#51H         ; start from password1
     MOV R1,#59H         ; start from password1
     CALL CHECK          ; check the password
+    CLR REN 
+    CLR ES 
     RET                 ; retrun!!!!!!!!!!!!!!!!!!!!
 
 CHECK:                  ; this is a function!!!!!!!!!!!
@@ -794,22 +816,25 @@ TLCM_4:                 ; Setting
         DB "1.Set Password  "
         DB "2.Set Music     "
 TLCM_6:                 ; SetMusic_1
-        DB "Set new music   "
-        DB "1. xxx         "
+        DB "Set New Music   "
+        DB "1. Family Tune "
         DB 07EH
 TLCM_7:                 ; SetMusic_2
-        DB "2. xxx          "
-        DB "3. xxx         "
+        DB "2. Yee          "
+        DB "3. Spring      "
         DB 07FH
 TLCM_8:                 ; AutoMode
-        DB "Be close to open"
-        DB "                " ; "Open or close"
+        DB "Auto Mode       "
+        DB "Be close to open" ; "Open or close"
                         ; depends on RFID
 TLCM_5:                 ; Set Password
-        DB "Origin password:"
+        DB "Origin Password:"
         DB "                "
 TLCM_9:
-        DB "New password:   "
+        DB "New Password:   "
+        DB "                "
+TLCM_10:
+        DB "Playing Music   "
         DB "                "
 
 DELAY_LCM_ANI:
@@ -833,6 +858,188 @@ DDELAY2:
     DJNZ	R6,DDELAY1
     DJNZ	R5,DDELAY
     RET
+
+PLAY_SONG1:
+    SETB ET0 
+    MOV TMOD,#1
+    MOV DPTR,#SCALE_SONG1
+    MOV MCOUNT,#0
+BEGIN_SONG1:
+    MOV A,MCOUNT
+    MOVC A,@A+DPTR
+    MOV TONE1,A
+    INC MCOUNT
+
+    MOV A,MCOUNT
+    MOVC A,@A+DPTR
+    MOV TONE2,A
+    INC MCOUNT
+
+    MOV A,MCOUNT
+    MOVC A,@A+DPTR
+    MOV TEMPO,A
+    INC MCOUNT
+
+    ACALL SOUND_SONG1
+    MOV A,MCOUNT
+    CJNE A,#33,BEGIN_SONG1
+    CLR ET0
+    CLR TR0 
+
+    MOV	TMOD,#00100000B ; Timer1,Mode2
+    MOV	TL1,#0E6H       ; baud rate = 2400
+    MOV	TH1,#0E6H       ; initial = E6H
+
+    MOV A,PCON          ; SMOD = 1
+    SETB ACC.7
+    MOV PCON,A
+
+    SETB EA             ; enable interrupt
+    CLR RI              ; clear receive flag
+    SETB PS             ; set serial interrupt to high priority
+
+    CLR SM2             ; serial mode 1
+    SETB SM1
+    CLR SM0
+
+    SETB TR1            ; start timer1
+    CLR A               ; set all register to 0
+
+    RET
+
+SOUND_SONG1:
+    SETB TR0
+    MOV TIME,#2
+SOUND1_SONG1:
+    MOV A,TEMPO
+    CJNE A,#0,SOUND1_SONG1
+    CLR TR0
+    RET
+
+PLAY_SONG2:
+    SETB ET0 
+    MOV TMOD,#1
+    MOV DPTR,#SCALE_SONG2
+    MOV MCOUNT,#0
+BEGIN_SONG2:
+    MOV A,MCOUNT
+    MOVC A,@A+DPTR
+    MOV TONE1,A
+    INC MCOUNT
+
+    MOV A,MCOUNT
+    MOVC A,@A+DPTR
+    MOV TONE2,A
+    INC MCOUNT
+
+    MOV A,MCOUNT
+    MOVC A,@A+DPTR
+    MOV TEMPO,A
+    INC MCOUNT
+
+    ACALL SOUND_SONG2
+    MOV A,MCOUNT
+    CJNE A,#51,BEGIN_SONG2
+    CLR ET0
+    CLR TR0
+
+    MOV	TMOD,#00100000B ; Timer1,Mode2
+    MOV	TL1,#0E6H       ; baud rate = 2400
+    MOV	TH1,#0E6H       ; initial = E6H
+
+    MOV A,PCON          ; SMOD = 1
+    SETB ACC.7
+    MOV PCON,A
+
+    SETB EA             ; enable interrupt
+    CLR RI              ; clear receive flag
+    SETB PS             ; set serial interrupt to high priority
+
+    CLR SM2             ; serial mode 1
+    SETB SM1
+    CLR SM0
+
+    SETB TR1            ; start timer1
+    CLR A               ; set all register to 0
+
+    RET 
+
+SOUND_SONG2:
+    SETB TR0
+    MOV TIME,#2
+SOUND1_SONG2:
+    MOV A,TEMPO
+    CJNE A,#0,SOUND1_SONG2
+    CLR TR0
+    RET
+
+PLAY_SONG3:
+    SETB ET0
+    MOV TMOD,#1
+    MOV DPTR,#SCALE_SONG3
+    MOV MCOUNT,#0
+BEGIN_SONG3:
+    MOV A,MCOUNT
+    MOVC A,@A+DPTR
+    MOV TONE1,A
+    INC MCOUNT
+
+    MOV A,MCOUNT
+    MOVC A,@A+DPTR
+    MOV TONE2,A
+    INC MCOUNT
+
+    MOV A,MCOUNT
+    MOVC A,@A+DPTR
+    MOV TEMPO,A
+    INC MCOUNT
+
+    ACALL SOUND_SONG3
+    MOV A,MCOUNT
+    CJNE A,#87,BEGIN_SONG3
+    CLR ET0
+    CLR TR0
+
+    MOV	TMOD,#00100000B ; Timer1,Mode2
+    MOV	TL1,#0E6H       ; baud rate = 2400
+    MOV	TH1,#0E6H       ; initial = E6H
+
+    MOV A,PCON          ; SMOD = 1
+    SETB ACC.7
+    MOV PCON,A
+
+    SETB EA             ; enable interrupt
+    CLR RI              ; clear receive flag
+    SETB PS             ; set serial interrupt to high priority
+
+    CLR SM2             ; serial mode 1
+    SETB SM1
+    CLR SM0
+
+    SETB TR1            ; start timer1
+    CLR A               ; set all register to 0
+
+    RET
+
+SOUND_SONG3:
+    SETB TR0
+    MOV TIME,#2
+SOUND1_SONG3:
+    MOV A,TEMPO
+    CJNE A,#0,SOUND1_SONG3
+    CLR TR0
+    RET
+
+INTERRUPT:
+    CLR TF0
+    MOV TH0,TONE1
+    MOV TL0,TONE2
+    CPL SPEAKER
+    DJNZ TIME,RETURN
+    MOV TIME,#2
+    DEC TEMPO
+RETURN:
+    RETI
 
 ANI_TABLE:
 DB	00000B  ; open
@@ -907,5 +1114,70 @@ DB	11110B
 DB	11000B
 DB	00000B
 DB	00000B
+
+SCALE_SONG1:
+    DB 248,24,184
+    DB 246,9,147
+    DB 242,183,109
+    DB 246,9,147
+    DB 247,32,165
+    DB 249,89,219
+    DB 247,32,165
+    DB 248,24,184
+    DB 247,32,165
+    DB 242,183,109
+    DB 246,9,147
+    DB 0
+
+SCALE_SONG2:
+    DB 241,23,65
+    DB 242,183,73
+    DB 241,23,65
+    DB 244,42,82
+    DB 244,42,82
+    DB 242,183,73
+    DB 241,23,65
+    DB 242,183,73
+    DB 245,9,98
+    DB 245,9,98
+    DB 242,183,73
+    DB 244,42,82
+    DB 242,183,73
+    DB 244,208,87
+    DB 244,208,87
+    DB 246,9,98
+    DB 247,32,110
+    DB 0
+SCALE_SONG3:
+    DB 242,183,109
+    DB 242,183,36
+    DB 244,42,82
+    DB 246,9,98
+    DB 247,32,110
+    DB 246,9,49
+    DB 247,32,55
+    DB 248,24,246
+    DB 249,89,219
+    DB 248,24,61
+    DB 248,24,61
+    DB 247,32,55
+    DB 246,9,98
+    DB 247,32,220
+    DB 247,32,220
+    DB 248,24,184
+    DB 249,89,73
+    DB 249,89,146
+    DB 248,24,61
+    DB 249,89,73
+    DB 246,9,147
+    DB 247,32,55
+    DB 247,32,220
+    DB 242,183,109
+    DB 248,24,61
+    DB 248,24,123
+    DB 247,32,110
+    DB 246,9,196
+    DB 246,9,196
+    DB 0
 
 	END

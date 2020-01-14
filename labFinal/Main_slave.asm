@@ -20,7 +20,7 @@
     ORG 30H
 SETUP:
     SETB IT0
-    MOV IE, #10000111B  ; INT0, TIMER0, INT1
+    MOV IE, #10000001B
     MOV IP, #00000001B  ; INT0 HIGH PRIORITY
     MOV DIST, #100
     MOV SLAVE_MODE, #0
@@ -36,16 +36,19 @@ MAIN_1:
 MAIN_2:
     CJNE R3, #2, MAIN_3
     CALL OPEN_DOOR
+    MOV SLAVE_MODE, #0
     JMP MAIN
 MAIN_3:
     MOV SLAVE_MODE, #0
     JMP MAIN
 
 GET_CMD:                ; INT0 ISR
+    PUSH ACC
     MOV A, P2
     ANL A, #03H         ; 0000 0011
-    CLR IE0
+    ;CLR IE0
     CALL DECODE
+    POP ACC
     RETI
 
 DECODE:
@@ -88,8 +91,8 @@ SETUP_SENSOR:
     SETB IT1             ; set timer1 (couter) as falling edge trigger
     SETB P3.5            ; set P3.5 as output
 
-    MOV IE, #10000110B   ; Interrupt Enable, set timer0 and INT1
-        RET
+    MOV IE, #10000111B   ; Interrupt Enable, set timer0 and INT1
+    RET
 
 UPDATE:                       ; Update the distance and BIN 2 BCD
     CLR IE1               ; clear INT1 signal
@@ -133,27 +136,6 @@ LL_DELAY1:
 LL_DELAY2:
     DJNZ R7,LL_DELAY2
     DJNZ R6,LL_DELAY1
-    RET
-
-SDELAY:
-    MOV R5, #03H     ; 1 machine cycle
-SDELAY1:
-    MOV R6, #08H     ; 1 machine cycle
-SDELAY2:
-    MOV R7, #0FFH    ; 1 machine cycle
-SDELAY3:
-    DJNZ R7, SDELAY3 ; 2 machine cycle
-    DJNZ R6, SDELAY2 ; 2 machine cycle
-    DJNZ R5, SDELAY1 ; 2 machine cycle
-    RET              ; 2 machine cycle
-
-L_DELAY:                ; delay subroutine
-    MOV R6,#0FH
-L_DELAY1:
-    MOV R7,#0FH
-L_DELAY2:
-    DJNZ R7,L_DELAY2
-    DJNZ R6,L_DELAY1
     RET
       
     END
