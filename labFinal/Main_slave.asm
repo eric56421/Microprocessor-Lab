@@ -1,7 +1,7 @@
     DIST EQU 30H
     SLAVE_MODE EQU 31H  ; 0 -> DISABLED AUTO
                         ; 1 -> ENABLED AUTO
-                        ; 2 -> OPEN DOOR
+                        ; 2 -> OPEN DOOR    
 
     ORG 00H
     JMP SETUP
@@ -9,16 +9,22 @@
     ORG 03H
     JMP GET_CMD            ; INT0
     
-    ORG 0BH
-    JMP TIMER0          ; timer0 interrupt
-    
-    ORG 13H
-    JMP DISTANCE        ; counter1 interrupt
-    
+    ORG 0BH   ; TIMER0
+    SETB P3.5 ; send signal to timer1 (counter) ++
+    CLR P3.5
+    RETI    
+
+    ORG 13H ; INT1
+    JMP UPDATE    
+
     ORG 30H
 SETUP:
+    SETB IT0
     MOV IE, #10000111B  ; INT0, TIMER0, INT1
     MOV IP, #00000001B  ; INT0 HIGH PRIORITY
+    MOV DIST, #100
+    MOV SLAVE_MODE, #0
+
 MAIN:
     MOV R3, SLAVE_MODE
     CJNE R3, #0, MAIN_1
@@ -28,91 +34,74 @@ MAIN_1:
     CALL AUTO_MODE
     JMP MAIN
 MAIN_2:
+    CJNE R3, #2, MAIN_3
     CALL OPEN_DOOR
+    JMP MAIN
+MAIN_3:
+    MOV SLAVE_MODE, #0
     JMP MAIN
 
 GET_CMD:                ; INT0 ISR
     MOV A, P2
     ANL A, #03H         ; 0000 0011
+    CLR IE0
     CALL DECODE
     RETI
 
 DECODE:
-    CJNE A, #0, DECODE_1    ; disable auto
+    CJNE A, #3, DECODE_1
     MOV SLAVE_MODE, #0
     RET
 DECODE_1:
-    CJNE A, #1, DECODE_2    ; enable auto
-    MOV SLAVE_MODE, #1
-    RET
-DECODE_2:
-    CJNE A, #2, DECODE_3    ; OPEN DOOR
-    MOV SLAVE_MODE, #2
-    RET
-DECODE_3:
-    MOV SLAVE_MODE, #0
+    MOV SLAVE_MODE, A
     RET
  
 AUTO_MODE:
-;======= setup sensor =======
-    MOV R0,#00H         ; start counting distance = 0
-    SETB EA             ; enable all interrupt
-    SETB ET0            ; enable timer0
-    CLR PT0             ; set timer0 to lower priority
-    CLR TF0             ; clear all the flag in timer0
-
-    SETB EX1            ; enable timer0
-    SETB PX1            ; set INT1 to higher priority
-    SETB IT1            ; falling-edge trigger
-    CLR TF1
-    MOV P1,#0           ; set P1.0 = input port
-
-    MOV TMOD,#11100010B ; set timer0 = mode2, counter1 = mode1
-    MOV TH0,#227        ; timer0 will interrupt every 29us
-    MOV TL0,#227        ; auto reload to TL0
-
-    MOV TH1,#0
-    MOV TL1,#0
-    SETB TR0
-    SETB TR1
-
+    CALL SETUP_SENSOR
 POLLING:
     SETB P1.0
-    CALL L_DELAY
+    CALL LL_DELAY
     CLR P1.0
+    CALL LL_DELAY
     MOV A,DIST
     CLR C
-    SUBB A,#7           ; 7CM
+    SUBB A,#10 ; 7CM
     JNC FAR
     CALL OPEN_DOOR
 FAR:
     MOV R2, SLAVE_MODE
-    CJNE R2,#1,POLLING
+    CJNE R2,#1,FAR_1
+    JMP POLLING
+FAR_1:
+    MOV IE,#10000001B
     RET
 
-TIMER0:
-    CPL P3.5            ; output the opposite volt
-    CLR TF0             ; clear timer flag
-    RETI
+SETUP_SENSOR:
+    MOV IP, #00000101B   ; set priority, where INT1 is high
+    MOV TMOD, #11010010B ; timer0: mode 2; timer1: mode 1, counter, gate
+    MOV TH0, #198        ; 29*2 = 58us
+    MOV TL0, #198
+    MOV TH1, #00         ; reset
+    MOV TL1, #00
+    SETB TR0             ; run timer0
+    SETB TR1             ; run timer1
+    SETB IT1             ; set timer1 (couter) as falling edge trigger
+    SETB P3.5            ; set P3.5 as output
 
-DISTANCE:
-    MOV DIST,TL1        ; getting distance
-    MOV TL1,#0
-    MOV TH1,#0
-    CLR IE1
-    CLR TF1             ; overflow flag
-;UPDATE:                         ; Update the distance and BIN 2 BCD
-;        CLR IE1                 ; clear INT1 signal
-;        MOV BIN+1, TH1          ; store distance
-;        MOV BIN, TL1
-;        MOV TH1, #00H           ; reset counter
-;        MOV TL1, #00H
-;        CALL BIN2BCD            ; BIN 2 BCD
-;        RETI
+    MOV IE, #10000110B   ; Interrupt Enable, set timer0 and INT1
+        RET
+
+UPDATE:                       ; Update the distance and BIN 2 BCD
+    CLR IE1               ; clear INT1 signal
+                            ; MOV BIN+1, TH1          ; store distance
+    MOV DIST, TL1
+    MOV TH1, #00H         ; reset counter
+    MOV TL1, #00H
+    RETI
 
 OPEN_DOOR:
     CALL MOTOR
-    ; CALL ANIMATE
+    RET
 
 MOTOR:
     MOV A,#00010001B
@@ -142,9 +131,21 @@ LL_DELAY:
 LL_DELAY1:
     MOV R7,#255
 LL_DELAY2:
-    DJNZ R7,DELAY2
-    DJNZ R6,DELAY1
+    DJNZ R7,LL_DELAY2
+    DJNZ R6,LL_DELAY1
     RET
+
+SDELAY:
+    MOV R5, #03H     ; 1 machine cycle
+SDELAY1:
+    MOV R6, #08H     ; 1 machine cycle
+SDELAY2:
+    MOV R7, #0FFH    ; 1 machine cycle
+SDELAY3:
+    DJNZ R7, SDELAY3 ; 2 machine cycle
+    DJNZ R6, SDELAY2 ; 2 machine cycle
+    DJNZ R5, SDELAY1 ; 2 machine cycle
+    RET              ; 2 machine cycle
 
 L_DELAY:                ; delay subroutine
     MOV R6,#0FH

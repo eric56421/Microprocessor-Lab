@@ -23,6 +23,9 @@
                             ; 3 -> AUTO
 	LEN EQU 64H
 	SET_FLAG EQU 65H
+    SONG_MODE EQU 66H       ; 1 -> XXX
+                            ; 2 -> XXX
+                            ; 3 -> XXX
 
     ORG 00H
     JMP SETUP
@@ -42,6 +45,7 @@ SETUP:
     MOV PS6,#53
     MOV PS7,#54
     MOV PS8,#55
+    MOV SONG_MODE, #1
 
 ;======== MAIN & MainMenu ========
 MAIN:
@@ -115,30 +119,93 @@ MAINMENU_SWITCH_2:
 	JMP MAINMENU_1
 ;======== Main & Main Menu ========
 
+;======== Unlock Success ========
+OPEN_DOOR:
+    MOV R4, #10
+OPENDOOR:
+    SETB P1.5   ; INT0 SEND 2
+    SETB P1.7   ; P2.1
+    CLR P1.6    ; P2.0
+    CLR P1.5
+    DJNZ R4, OPENDOOR
+
+    MOV R2, SONG_MODE
+SONG1:
+    CJNE R2, #1, SONG2
+    ;CALL PLAY_SONG1
+    RET
+SONG2:
+    CJNE R2, #2, SONG3
+    ; CALL PLAY_SONG2
+    RET
+SONG3:
+    CJNE R2, #3, SONG4
+    ; CALL PLAY_SONG3
+    RET
+SONG4:                      ; INVALID SONG, RESET TO SONG1
+    MOV SONG_MODE, #1
+    ; CALL PLAY_SONG1
+    RET
+;======== Unlock Success ========
+
 ;======== Auto Mode ========
 AUTOMODE:
-    ; SHOW & FIX RECEIVE_MODE
-    ; FIX ISR : CLR ES
-    ; DO MORE CHECK ON RECEIVE_MODE SET AND LEAVING
+    MOV DPTR, #TLCM_8
+    CALL SHOW2
+    MOV RECEIVE_MODE, #3; AUTOMODE
 
-    SETB P2.5
-    CLR P2.7
-    SETB P2.6
-    CLR P2.5
+    ;=== SEND SIGNAL(2) TO SALVE ===
+    MOV R4, #10
+ENABLE_AUTO:
+    SETB P1.5           ; SEND 1 ENABLE AUTO
+    CLR P1.7
+    SETB P1.6
+    CLR P1.5
+    DJNZ R4, ENABLE_AUTO
+    
+    ;=== SETUP SERIAL ===
+    MOV LEN,#0
+    MOV R0,#51H         ; start from password1
+    MOV R1,#59H         ; start from password1
 
-    CALL S_DELAY
+    MOV	TMOD,#00100000B ; Timer1,Mode2
+    MOV	TL1,#0E6H       ; baud rate = 2400
+    MOV	TH1,#0E6H       ; initial = E6H
 
-    SETB P2.5       ; SEND SIGNAL TWO TIMES
-    CLR P2.7
-    SETB P2.6
-    CLR P2.5
-AUTOMODE_1:
-    MOV R2, RECEIVE_MODE
-    CJNE R2, #3, AUTOMODE_2
-    JMP AUTOMODE_1
-AUTOMODE_2:
-    ; SEND DISABLE SIGNAL
-    ; DO MORE CHECK
+    MOV A,PCON          ; SMOD = 1
+    SETB ACC.7
+    MOV PCON,A
+
+    SETB EA             ; enable interrupt
+    CLR RI              ; clear receive flag
+    SETB PS             ; set serial interrupt to high priority
+
+    CLR SM2             ; serial mode 1
+    SETB SM1
+    CLR SM0
+
+    SETB TR1            ; start timer1
+    CLR A               ; set all register to 0
+    SETB ES             ; enable serial interrupt
+    SETB REN            ; start receiving
+
+    MOV LEN,#0
+HERE4:
+    MOV R2,LEN 
+    CJNE R2,#1,HERE4
+
+
+    ;=== DISABLE AUTO ===
+    MOV R4, #10
+DISABLE_AUTO:
+    SETB P1.5       ; SEND 0 DISABLE AUTO
+    CLR P1.7        ; SEND DISABLE SIGNAL
+    CLR P1.6
+    CLR P1.5    
+    DJNZ R4, DISABLE_AUTO
+
+    CLR ES  ; enable serial interrupt
+    CLR REN ; start receiving
 
     RET
 ;======== Auto Mode ========
@@ -167,14 +234,39 @@ SETTING_2:
     JMP SETTING
 ;=========== SETTING =============
 
+;======== SET MUSIC =======
 SET_MUSIC:
 SET_MUSIC1:
     MOV DPTR, #TLCM_6
     CALL SHOW2
 
     CALL KEYBOARD
-    
+    MOV R2, INPUT
+    CJNE R2, #4, SET_MUSIC_SWITCH
+    ;JMP SET_MUSIC2
+SET_MUSIC2:
+    MOV DPTR, #TLCM_7
+    CALL SHOW2
 
+    CALL KEYBOARD
+    MOV R2, INPUT
+    CJNE R2, #4, SET_MUSIC_SWITCH
+    JMP SET_MUSIC1
+SET_MUSIC_SWITCH:
+    CJNE R2, #1, SET_MUSIC_SWITCH_1
+    MOV SONG_MODE, #1
+    RET
+SET_MUSIC_SWITCH_1:
+    CJNE R2, #2, SET_MUSIC_SWITCH_2
+    MOV SONG_MODE, #2
+    RET
+SET_MUSIC_SWITCH_2:
+    CJNE R2, #3, SET_MUSIC_SWITCH_3
+    MOV SONG_MODE, #3
+    RET
+SET_MUSIC_SWITCH_3:
+    JMP SET_MUSIC1
+;======== SET MUSIC =======
 
 ; ========== RECEIVE_ISR ===========
 RECEIVE:             ; receive isr!!!!!!!!!!!!
@@ -195,6 +287,7 @@ NEXT1:
     RETI
 NEXT2:
     CJNE R2,#3,NEXT3 ; AUTO_MODE
+    CALL ENTERING_PASSWORD   
     POP 0E0H
     RETI
 NEXT3:
@@ -466,7 +559,7 @@ CHECK_LEN:
     INC R1
     DJNZ LEN,CHECK
 CORRECT:
-    ; CALL OPEN_DOOR      ; open the door
+    CALL OPEN_DOOR      ; open the door
 
     MOV SBUF,#10        ; send enter
     JNB TI,$
@@ -483,7 +576,114 @@ CORRECT:
 
 
 ; ======== LCM Function ========
-; Note to the setting.
+; Note the setting.
+; ======== LCM Animation ========
+ANIMATE:
+    MOV R1,#10000000B ; VAR
+    MOV R2,#11000000B ; VAR
+    CALL SETUP_LCM_ANI
+    CALL LOAD_ANI
+
+MAIN_ANI:
+    MOV A, R1//OPEN
+    CALL CMDWRT_ANI
+    MOV A, #00H
+    CALL DATAWRT_ANI
+
+    INC R1
+    MOV A, R1
+    CALL CMDWRT_ANI
+    MOV A, #01H
+    CALL DATAWRT_ANI
+    DEC R1
+
+    MOV A, R2
+    CALL CMDWRT_ANI
+    MOV A, #02H
+    CALL DATAWRT_ANI
+
+    INC R2
+    MOV A, R2
+    CALL CMDWRT_ANI
+    MOV A, #03H
+    CALL DATAWRT_ANI
+    DEC R2
+
+    CALL	DDELAY
+    MOV A, #00000001B
+    CALL CMDWRT_ANI
+    CALL DDELAY
+MAIN1_ANI:
+    MOV A, R1//CLOSE
+    CALL CMDWRT_ANI
+    MOV A, #04H
+    CALL DATAWRT_ANI
+
+    INC R1
+    MOV A, R1
+    CALL CMDWRT_ANI
+    MOV A, #05H
+    CALL DATAWRT_ANI
+
+    MOV A, R2
+    CALL CMDWRT_ANI
+    MOV A, #06H
+    CALL DATAWRT_ANI
+
+    INC R2
+    MOV A, R2
+    CALL CMDWRT_ANI
+    MOV A, #07H
+    CALL DATAWRT_ANI
+
+    CALL DDELAY
+    MOV A, #00000001B
+    CALL CMDWRT_ANI
+    CALL DDELAY
+
+    CJNE R2,#11010000,MAIN_ANI
+    RET
+; ======== LCM Animation ========
+
+LOAD_ANI:
+        MOV DPTR, #ANI_TABLE
+        MOV A, #64
+        CALL CMDWRT_ANI
+        MOV R0, #0
+LOAD_ANI_1:
+        MOV A, R0
+        MOVC A, @A+DPTR
+        CALL DATAWRT_ANI
+        INC R0
+        CJNE R0, #8*8, LOAD_ANI_1
+        RET
+
+SETUP_LCM_ANI:
+    MOV A, #00000001B  ; CLEAR & RESET
+    CALL CMDWRT_ANI
+    MOV A, #00000110B  ; ADD TO RIGHT, DISPLAY NOT MOVING
+    CALL CMDWRT_ANI
+    MOV A, #00001100B  ; DISPLAY:ON, CURSOR_UNDERLINE:ON, BLINKING:OFF
+    CALL CMDWRT_ANI
+    MOV A, #00111100B  ; LEN:8, LINES:2, FONT:7
+    CALL CMDWRT_ANI
+    RET
+
+
+CMDWRT_ANI:            ; Command write
+    MOV P2, A
+    MOV P1, #00000100B ; 04H, E=1, RW=0, RS=0
+    MOV P1, #00000000B ; 00H, E=0, RW=0, RS=0
+    CALL DELAY_LCM_ANI
+    RET
+
+DATAWRT_ANI:           ; ShowData write
+    MOV P2, A
+    MOV P1, #00000101B ; 05H, E=1, RW=0, RS=1
+    MOV P1, #00000001B ; 01H, E=0, RW=0, RS=1
+    CALL DELAY_LCM_ANI
+    RET
+
 ; ======== Setup LCM =========
 SETUP_LCM:
         ;MOV P2, #00H
@@ -603,7 +803,7 @@ TLCM_7:                 ; SetMusic_2
         DB 07FH
 TLCM_8:                 ; AutoMode
         DB "Be close to open"
-        ;DB ""          ; "Open or close"
+        DB "                " ; "Open or close"
                         ; depends on RFID
 TLCM_5:                 ; Set Password
         DB "Origin password:"
@@ -612,5 +812,100 @@ TLCM_9:
         DB "New password:   "
         DB "                "
 
+DELAY_LCM_ANI:
+        MOV R5, #05H            ; 1 machine cycle
+DELAY_LCM1_ANI:
+        MOV R6, #10H            ; 1 machine cycle
+DELAY_LCM2_ANI:
+        MOV R7, #0FFH           ; 1 machine cycle
+DELAY_LCM3_ANI:
+        DJNZ R7, DELAY_LCM3_ANI ; 2 machine cycle
+        DJNZ R6, DELAY_LCM2_ANI ; 2 machine cycle
+        DJNZ R5, DELAY_LCM1_ANI ; 2 machine cycle
+        RET                     ; 2 machine cycle
+
+DDELAY:
+    MOV	R6,#50
+DDELAY1:
+    MOV	R7,#30
+DDELAY2:
+    DJNZ	R7,DDELAY2
+    DJNZ	R6,DDELAY1
+    DJNZ	R5,DDELAY
+    RET
+
+ANI_TABLE:
+DB	00000B  ; open
+DB	00000B
+DB	00000B
+DB	00011B
+DB	00111B
+DB	01111B
+DB 	11111B
+DB	11111B
+
+DB	00000B
+DB	00000B
+DB	00000B
+DB	11000B
+DB	11100B
+DB	10010B
+DB	10011B
+DB	11110B
+
+DB	11111B
+DB	11111B
+DB	11111B
+DB	01111B
+DB	00111B
+DB	00011B
+DB	00000B
+DB	00000B
+
+DB	11000B
+DB	11100B
+DB	11110B
+DB	11111B
+DB	11110B
+DB	11000B
+DB	00000B
+DB	00000B
+
+
+DB	00000B//close
+DB	00000B
+DB	00000B
+DB	00011B
+DB	00111B
+DB	01111B
+DB 	11111B
+DB	11111B
+
+DB	00000B
+DB	00000B
+DB	00000B
+DB	11000B
+DB	11100B
+DB	10010B
+DB	10011B
+DB	11111B
+
+DB	11111B
+DB	11111B
+DB	11111B
+DB	01111B
+DB	00111B
+DB	00011B
+DB	00000B
+DB	00000B
+
+DB	11111B
+DB	11111B
+DB	11111B
+DB	11111B
+DB	11110B
+DB	11000B
+DB	00000B
+DB	00000B
 
 	END
